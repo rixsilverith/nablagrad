@@ -1,5 +1,4 @@
 #include "nablagrad.hpp"
-
 #include <algorithm>
 
 namespace nabla {
@@ -21,7 +20,6 @@ namespace nabla {
                 gradient[i] = F(dual).get_adjoint(); // evaluate F using the dual vector and get the adjoint
                 dual[i].set_adjoint(0.); // disable diff wrt the i-th variable for next iteration
             }
-
             return gradient;
         };
         return Df;
@@ -39,5 +37,3 @@ namespace nabla {
         return Df;
     }
 }
-
-
