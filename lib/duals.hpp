@@ -5,10 +5,10 @@
 #include <cmath>
 
 namespace nabla {
-    /* Representation of a dual number. Dual numbers are of the form `x + ye`, where 
-     * e^2 = 0. In this implementation we refer to `x` and `y` has the `primal` and
-     * `adjoint` attributes, respectively. Sometimes the `adjoint is called the `tangent`.
-     * */
+    // Representation of a dual number. Dual numbers are of the form `x + ye`, where 
+    // e^2 = 0 and e != 0. In this implementation we refer to `x` and `y` has the `primal` and
+    // `adjoint` attributes, respectively. Sometimes the `adjoint` is called the `tangent`.
+    //
     struct Dual {
         constexpr Dual() : m_primal{0.}, m_adjoint{0.} {}
         constexpr Dual(const Dual& d) : m_primal{d.get_primal()}, m_adjoint{d.get_adjoint()} {}
