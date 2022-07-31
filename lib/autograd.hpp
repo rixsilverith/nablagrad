@@ -5,7 +5,7 @@
 #include <functional>
 #include <vector>
 
-#include "duals.hpp"
+#include "dual.hpp"
 
 template <typename T>
 std::ostream& operator<<(std::ostream& os, const std::vector<T>& v) {

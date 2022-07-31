@@ -1,4 +1,4 @@
-#include "duals.hpp"
+#include "dual.hpp"
 
 namespace nabla {
     Dual sin(Dual d) { return Dual(::sin(d.m_primal), d.m_adjoint * ::cos(d.m_primal)); }

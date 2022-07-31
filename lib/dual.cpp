@@ -1,4 +1,4 @@
-#include "duals.hpp"
+#include "dual.hpp"
 
 namespace nabla {
     const Dual& Dual::operator=(double x) {
