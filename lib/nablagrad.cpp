@@ -11,7 +11,6 @@ namespace nabla {
     std::function<RealVec(const RealVec&)> grad(std::function<Dual(const DualVec&)> F) {
         auto Df = [F](const RealVec& x) -> RealVec {
             size_t n = x.size(); // dimension
-
             DualVec dual(x.begin(), x.end()); // transform x into a dual vector
             RealVec gradient(n);
         
@@ -23,6 +22,12 @@ namespace nabla {
             return gradient;
         };
         return Df;
+    }
+
+    // compute and evaluate gradient on given vector
+    RealVec grad(std::function<Dual(const DualVec&)> f, const RealVec& x) {
+        auto gradient = grad(f);
+        return gradient(x);
     }
 
     // directional derivative computation using forward-mode
