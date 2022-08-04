@@ -1,14 +1,29 @@
-#include "autograd.hpp"
+#include "core.hpp"
 #include <algorithm>
 
 namespace nabla {
+    // gradient computation using reverse-mode
+    std::function<Gradient(const RealVec&)> grad(std::function<Tensor(const TensorVec&)> f) {
+        auto Df = [f](const RealVec& x) -> Gradient {
+            TensorVec input_tensor(x.begin(), x.end());
+            f(input_tensor).backward(); // evaluate function at the given vector and backprop
+            
+            size_t n = x.size();
+            Gradient grad_vec(n);
+            for (size_t i = 0; i < n; ++i)
+                grad_vec.at(i) = input_tensor.at(i).get_adjoint();
+            return grad_vec;
+        };
+        return Df;
+    }
+
     // derivative computation using forward-mode
-    std::function<double(double)> derivative(std::function<Dual(Dual)> f) {
+    std::function<double(double)> grad_forward(std::function<Dual(Dual)> f) {
         return [f](double x) -> double { return f(Dual(x, 1)).get_adjoint(); };
     }
 
     // gradient computation using forward-mode
-    std::function<RealVec(const RealVec&)> grad(std::function<Dual(const DualVec&)> F) {
+    std::function<RealVec(const RealVec&)> grad_forward(std::function<Dual(const DualVec&)> F) {
         auto Df = [F](const RealVec& x) -> RealVec {
             size_t n = x.size(); // dimension
             DualVec dual(x.begin(), x.end()); // transform x into a dual vector
@@ -25,8 +40,8 @@ namespace nabla {
     }
 
     // compute and evaluate gradient on given vector
-    RealVec grad(std::function<Dual(const DualVec&)> f, const RealVec& x) {
-        auto gradient = grad(f);
+    RealVec grad_forward(std::function<Dual(const DualVec&)> f, const RealVec& x) {
+        auto gradient = grad_forward(f);
         return gradient(x);
     }
 
