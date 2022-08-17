@@ -1,4 +1,5 @@
 #include "tensor.hpp"
+#include "tensor_ops.hpp"
 
 #include <iostream>
 
@@ -10,13 +11,13 @@ namespace nabla {
         std::cout << "      which depends on tensors:" << std::endl;
 
         int tensor_dep_index = 0;
-        for (auto& tensor_dep : this->m_tensor_dependencies) {
+        for (auto& tensor_dep : this->m_dependencies) {
             if (tensor_dep_index++ == 0) continue;
             std::cout << "       └── " << *(tensor_dep.get_tensor()) << " with dependency adjoint " << tensor_dep.get_adjoint() << std::endl;
         }
 
         tensor_dep_index = 0;
-        for (auto& tensor_dep : this->m_tensor_dependencies) {
+        for (auto& tensor_dep : this->m_dependencies) {
             if (tensor_dep_index++ == 0) continue;
             double adjoint = this->m_adjoint * tensor_dep.get_adjoint();
 
@@ -33,14 +34,14 @@ namespace nabla {
         std::cout << "      depends on tensors:" << std::endl;
 
         int tensor_dep_index = 0;
-        for (auto& tensor_dep : this->m_tensor_dependencies) {
+        for (auto& tensor_dep : this->m_dependencies) {
             if (tensor_dep_index++ == 0) continue;
             std::cout << "       └── " << *(tensor_dep.get_tensor()) 
                       << " with dependency adjoint " << tensor_dep.get_adjoint() << std::endl;
         }
 
         tensor_dep_index = 0;
-        for (auto& tensor_dep : this->m_tensor_dependencies) {
+        for (auto& tensor_dep : this->m_dependencies) {
             if (tensor_dep_index++ == 0) continue;
             double local_grad = adjoint * tensor_dep.get_adjoint();
 
@@ -54,18 +55,22 @@ namespace nabla {
         this->m_adjoint += adj;
     }
 
+    Tensor operator*(const Tensor& ltensor, const Tensor& rtensor) {
+        return MultBackward(ltensor, rtensor);
+    }
+
     Tensor operator+(const Tensor& ltensor, const Tensor& rtensor) {
         double primal = ltensor.m_primal + rtensor.m_primal;
         Tensor add_tensor{primal};
 
-        add_tensor.m_tensor_dependencies.emplace_back(TensorDependencyNode(&ltensor, 1.));
-        add_tensor.m_tensor_dependencies.emplace_back(TensorDependencyNode(&ltensor, 1.));
-        add_tensor.m_tensor_dependencies.emplace_back(TensorDependencyNode(&rtensor, 1.));
+        add_tensor.m_dependencies.emplace_back(TensorDependencyNode(&ltensor, 1.));
+        add_tensor.m_dependencies.emplace_back(TensorDependencyNode(&ltensor, 1.));
+        add_tensor.m_dependencies.emplace_back(TensorDependencyNode(&rtensor, 1.));
 
         int tensor_dep_index = 0;
         std::cout << "Added add_tensor " << add_tensor << " to backward computational graph" << std::endl;
         std::cout << "      depends on tensors:" << std::endl;
-        for (auto& tensor_dep : add_tensor.m_tensor_dependencies) {
+        for (auto& tensor_dep : add_tensor.m_dependencies) {
             if (tensor_dep_index++ == 0) continue;
             std::cout << "       └── " << *(tensor_dep.get_tensor()) 
                       << " with dependency adjoint " << tensor_dep.get_adjoint() << std::endl; 
@@ -78,14 +83,14 @@ namespace nabla {
         double primal = ltensor.m_primal - rtensor.m_primal;
         Tensor sub_tensor{primal};
 
-        sub_tensor.m_tensor_dependencies.emplace_back(TensorDependencyNode(&ltensor, 1.));
-        sub_tensor.m_tensor_dependencies.emplace_back(TensorDependencyNode(&ltensor, 1.));
-        sub_tensor.m_tensor_dependencies.emplace_back(TensorDependencyNode(&rtensor, -1.));
+        sub_tensor.m_dependencies.emplace_back(TensorDependencyNode(&ltensor, 1.));
+        sub_tensor.m_dependencies.emplace_back(TensorDependencyNode(&ltensor, 1.));
+        sub_tensor.m_dependencies.emplace_back(TensorDependencyNode(&rtensor, -1.));
 
         int tensor_dep_index = 0;
         std::cout << "Added sub_tensor " << sub_tensor << " to backward computational graph" << std::endl;
         std::cout << "      depends on tensors:" << std::endl;
-        for (auto& tensor_dep : sub_tensor.m_tensor_dependencies) {
+        for (auto& tensor_dep : sub_tensor.m_dependencies) {
             if (tensor_dep_index++ == 0) continue;
             std::cout << "       └── " << *(tensor_dep.get_tensor()) 
                       << " with dependency adjoint " << tensor_dep.get_adjoint() << std::endl; 
@@ -94,30 +99,39 @@ namespace nabla {
         return sub_tensor;
     }
 
+    /*
     Tensor operator*(const Tensor& ltensor, const Tensor& rtensor) {
         double primal = ltensor.m_primal * rtensor.m_primal;
         Tensor mult_tensor{primal};
 
-        mult_tensor.m_tensor_dependencies.emplace_back(TensorDependencyNode(&ltensor, rtensor.m_primal));
-        mult_tensor.m_tensor_dependencies.emplace_back(TensorDependencyNode(&ltensor, rtensor.m_primal));
-        mult_tensor.m_tensor_dependencies.emplace_back(TensorDependencyNode(&rtensor, ltensor.m_primal));
+        mult_tensor.m_dependencies.emplace_back(TensorDependencyNode(&ltensor, rtensor.m_primal));
+        mult_tensor.m_dependencies.emplace_back(TensorDependencyNode(&ltensor, rtensor.m_primal));
+        mult_tensor.m_dependencies.emplace_back(TensorDependencyNode(&rtensor, ltensor.m_primal));
 
         int tensor_dep_index = 0;
         std::cout << "Added mult_tensor " << mult_tensor << " to backward computational graph" << std::endl;
         std::cout << "      depends on tensors:" << std::endl;
-        for (auto& tensor_dep : mult_tensor.m_tensor_dependencies) {
+        for (auto& tensor_dep : mult_tensor.m_dependencies) {
             if (tensor_dep_index++ == 0) continue;
             std::cout << "       └── " << *(tensor_dep.get_tensor()) 
                       << " with dependency adjoint " << tensor_dep.get_adjoint() << std::endl; 
         }
 
         return mult_tensor;
-    }
+    }*/
         
     std::ostream& operator<<(std::ostream& os, const Tensor& tensor) {
-        os << "nabla::Tensor[name: " << tensor.m_name << ", primal: " << tensor.m_primal << ", adjoint: " << tensor.m_adjoint << "]";
+        os << "nabla::Tensor[name: " << tensor.m_name << ", primal: " << tensor.m_primal
+           << ", grad_tape_node_index: " << tensor.node_gradtape_index << "]";
         return os;
     }
+
+    /*
+    std::ostream& operator<<(std::ostream& os, const Tensor& tensor) {
+        os << "nabla::Tensor[name: " << tensor.m_name << ", primal: " << tensor.m_primal << ", adjoint: " 
+        << tensor.m_adjoint << ", node_index: " << tensor.node_gradtape_index << "]";
+        return os;
+    }*/
 
     /*
     Tensor operator+(const Tensor& ltensor, const Tensor& rtensor) {

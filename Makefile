@@ -2,33 +2,27 @@ CC := g++ -std=c++17
 CFLAGS := -g -Wall -O2
 
 INSTALL_DIR := /usr/include
+NABLA_DIR := nablagrad
+SRCS := $(NABLA_DIR)/dual.cpp $(NABLA_DIR)/tensor.cpp $(NABLA_DIR)/core.cpp $(NABLA_DIR)/forward_ad.cpp $(NABLA_DIR)/gradient_tape.cpp $(NABLA_DIR)/tensor_ops.cpp
+OBJS := $(patsubst %.cpp,%.o,$(SRCS))
 
 .PHONY: all install uninstall clean
 
 all: test
 
-test: nablagrad/main.o nablagrad/tensor.o nablagrad/core.o nablagrad/dual.o nablagrad/forward_ad.o 
-	$(CC) -o $@ nablagrad/main.o nablagrad/tensor.o nablagrad/core.o nablagrad/dual.o nablagrad/forward_ad.o
+test: $(NABLA_DIR)/main.o $(OBJS)
+	$(CC) -o $@ $(NABLA_DIR)/main.o $(OBJS)
 
-nablagrad/main.o: nablagrad/main.cpp
-	$(CC) $(CFLAGS) -c nablagrad/main.cpp -o nablagrad/main.o
-
-nablagrad/forward_ad.o: nablagrad/forward_ad.cpp
-	$(CC) $(CFLAGS) -c nablagrad/forward_ad.cpp -o nablagrad/forward_ad.o
-nablagrad/core.o: nablagrad/core.cpp
-	$(CC) $(CFLAGS) -c nablagrad/core.cpp -o nablagrad/core.o
-nablagrad/dual.o: nablagrad/dual.cpp
-	$(CC) $(CFLAGS) -c nablagrad/dual.cpp -o nablagrad/dual.o
-nablagrad/tensor.o: nablagrad/tensor.cpp
-	$(CC) $(CFLAGS) -c nablagrad/tensor.cpp -o nablagrad/tensor.o
+$(NABLA_DIR)/%.o: $(SRCS)
+	$(CC) $(CFLAGS) -c $(NABLA_DIR)/$*.cpp -o $(NABLA_DIR)/$*.o
 
 install:
-	cp -r nablagrad $(INSTALL_DIR)
+	cp -r $(NABLA_DIR) $(INSTALL_DIR)
 	@echo "nablagrad installed to "$(INSTALL_DIR)""
 
 uninstall:
-	rm -r $(INSTALL_DIR)/nablagrad
+	rm -r $(INSTALL_DIR)/$(NABLA_DIR)
 	@echo "nablagrad uninstalled"
 
 clean:
-	rm nablagrad/*.o test
+	rm $(NABLA_DIR)/*.o test
