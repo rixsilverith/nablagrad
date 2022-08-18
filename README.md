@@ -1,29 +1,82 @@
 [![License](https://img.shields.io/github/license/rixsilverith/nablagrad?color=g)](https://mit-license.org/)
 ![Cpp Version](https://img.shields.io/badge/C%2B%2B-17+-green)
 
-# ∇grad (nablagrad)
+# ∇grad (nablagrad) automatic differentiation engine
 
-Automatic differentiation (also known as *autodiff*) is a technique to automatically compute and evaluate partial (or ordinary) 
-derivatives of a given mathematical function.
+Automatic differentiation is a technique to automatically perform efficient and analytically precise partial 
+differentiation on a given mathematical function or expression.
 
-*nablagrad* is yet another automatic differentiation library written in C++. Despite its main purpose being
-learning how autodiff works and how it may be implemented, it should be a fast and reliable tool to perform first-order
-differentiation in both forward and reverse accumulation mode.
+*nablagrad* is yet another automatic differentiation engine supporting both forward and reverse-mode autodiff.
 
 ---
 
 ## Overview
 
 Automatic differentiation has two different modes of operation known as *forward accumulation mode* (or
-*tangent linear mode*) and *reverse accumulation mode* (or *cotangent linear mode*). *nablagrad* makes use of the 
-[`nabla::Dual`](nablagrad/dual.hpp) structure representing a [dual number](https://en.wikipedia.org/wiki/Dual_number),
-together with operator overloading, to perform partial differentiation in forward-mode.
+*tangent linear mode*) and *reverse accumulation mode* (or *cotangent linear mode*). 
 
-In the case of reverse-mode, *nablagrad* uses the [`nabla::Tensor`](nablagrad/tensor.hpp) structure (which is an extended 
-and adapted version of `nabla::Dual`) to progressively build a computational graph from the given mathematical expression, 
-which upon completion is traversed backwards to compute and propagate partial derivatives using the chain rule.
+*nablagrad* makes use of [dual numbers](https://en.wikipedia.org/wiki/Dual_number), together with operator 
+overloading, to perform partial differentiation in forward-mode. In reverse-mode, a gradient tape (known as 
+Wengert list) is used to represent an abstract computation graph that is built progressively when evaluating 
+the given mathematical expression. Upon completion, the graph is traversed backwards, computing and propagating 
+the corresponding partial derivatives using the chain rule.
 
-For a complete, more detailed explanation of how these modes work see [Baydin et. al. (2018)](https://arxiv.org/abs/1502.05767).
+For a complete, more detailed explanation of how these modes work see 
+[Baydin et al. (2018)](https://arxiv.org/abs/1502.05767).
+
+---
+
+## Some usage examples
+
+The full implementation of the following examples (and more) can be found in the [examples](examples) directory. 
+Note that in these examples we use template functions to be able to compare *nablagrad* computations with 
+`nabla::Dual` and `nabla::Tensor` to the finite differences computation.
+
+### Reverse-mode gradient computation
+
+Let $f(x_0, x_1) = \ln(x_0) + x_0x_1 + \sin(x_1)$. Implement $f(x_0, x_1)$ as a template function to allow 
+computing both the value of the function and the gradient.
+
+```cpp
+template<typename T> T f(const std::vector<T>& x) {
+    return log(x.at(0)) + x.at(0) * x.at(1) + sin(x.at(1));
+}
+```
+
+Using the [`nabla::Tensor`](nablagrad/tensor.hpp) structure and the [`nabla::grad()`](nablagrad/core.hpp) 
+function the gradient $\nabla f(x_0, x_1)$ can be easily computed and evaluated at some vector $x$ as
+
+```cpp
+std::vector<double> x = { 2.0, -3.0 };
+
+auto grad_f = nabla::grad(f<nabla::Tensor>);
+std::cout << "∇f = " << grad_f(x) << std::endl;
+```
+
+Gradient computation can also be performed (less efficiently, see [Baydin et al. (2018)](https://arxiv.org/abs/1502.05767)) 
+with forward-mode by using [`nabla::Dual`](nablagrad/dual.hpp) and [`nabla::grad_forward()`](nablagrad/core.hpp) 
+instead of `nabla::Tensor` and `nabla::grad()`.
+
+### Forward-mode partial differentiation
+
+Consider a function $f(x_0, x_1) = x_0^2x_1 + x_1$. Partial differentiation (for instance, $\partial f/\partial x_0$) 
+can be performed by declaring all variables as `nabla::Dual` and setting the adjoint to $1.0$ of the variable to be 
+differentiated with respect to.
+
+```cpp
+template <typename T> f(const std::vector<T>& x) {
+    return pow(x.at(0), 2) * x.at(1) + x.at(1);
+}
+```
+
+```cpp
+nabla::Dual x_0{-4.3, 1.0};
+nabla::Dual x_1{6.2};
+std::vector<nabla::Dual> x = { x_0,  x_1 };
+
+nabla::Dual df_x_0 = f<nabla::Dual>(x);
+std::cout << "∂f/∂x_0 = " << x_0.get_adjoint() << std::endl;
+```
 
 ---
 
@@ -47,68 +100,17 @@ should be available by importing the header file [`nablagrad/nabla.h`](nablagrad
 
 ### Requirements
 
-In order to compile *nablagrad* from source, a compiler that supports at least C++17 is needed.
+A compiler supporting, at least, C++17 is needed in order to compile *nablagrad* from source.
 
 ---
 
-## Some usage examples
+## About the design
 
-The full implementation of the following examples (and more) can be found in the [examples](examples) directory. Note that 
-in these examples we use template functions to be able to compare *nablagrad* computations with `nabla::Dual` and `nabla::Tensor`
-to the finite differences computation.
-
-### Forward-mode partial differentiation
-
-Consider a function $f(x_0, x_1) = x_0^2x_1 + x_1$. Partial differentiation (for instance, $\partial f/\partial x_0$) 
-can be performed by declaring all variables as `nabla::Dual` and setting the adjoint to $1.0$ of the variable to be differentiated 
-with respect to.
-
-```cpp
-template <typename T> f(const std::vector<T>& x) {
-    return pow(x.at(0)) * x.at(1) + x.at(1);
-}
-```
-
-```cpp
-nabla::Dual x_0{-4.3, 1.0};
-nabla::Dual x_1{6.2};
-std::vector<nabla::Dual> x = { x_0,  x_1 };
-std::vector<double> x_f = { -4.3, 6.2 };
-
-nabla::Dual df_x0 = f<nabla::Dual>(x);
-double finite_diff = (f<double>(x_f + 0.001) - f<double>(x_f - 0.001)) / 0.0002;
-
-std::cout << "∂f/∂x_0 = " << x_0.get_adjoint() << std::endl;
-std::cout << "finite differences: ∂f/∂x_0 = " << finite_diff << std::endl;
-```
-
-### Reverse-mode gradient computation
-
-In this example we compute the gradient of $f(x_0, x_1) = \ln(x_0) + x_0x_1 + \sin(x_1)$ using reverse-mode.
-Define $f(x_0, x_1)$ as a template function to allow computing both the value of the function and the gradient.
-
-```cpp
-template <typename T> T f(const std::vector<T>& x) {
-    return log(x.at(0)) + x.at(0) * x.at(1) + sin(x.at(1));
-}
-```
-
-Using the `nabla::Tensor` structure and the `nabla::grad()` function the gradient can be computed and evaluated
-at the vector $x$ easily as
-
-```cpp
-std::vector<double> x = { 2.0, -3.0 };
-
-auto grad_f = nabla::grad(f<nabla::Tensor>);
-double finite_diff = (f<double>(x + 0.001) - f<double>(x - 0.001)) / 0.0002;
-
-std::cout << "autodiff: " << grad_f(x) << std::endl;
-std::cout << "finite differences: " << finite_diff << std::endl;
-
-```
-
-Gradient computation can also be performed (less efficiently, see [Baydin et. al. (2018)](https://arxiv.org/abs/1502.05767)) 
-with forward-mode by using `nabla::Dual` and `nabla::grad_forward()` instead of `nabla::Tensor` and `nabla::grad()`.
+Currently, reverse-mode uses a gradient tape to record the operations performed between tensors, but not the tensors
+themselves. The downside of this approach is that the gradients cannot be propagated to the tensor; i.e. gradients
+are not stored in the tensors, but in an allocated output vector. Therefore, is not possible (as it is in forward-mode) to
+get the adjoints (gradients) for each tensor directly from it via the `get_adjoint()` method. Instead, it is needed
+the access the corresponding partial derivative in the gradient vector by its index.
 
 ---
 
