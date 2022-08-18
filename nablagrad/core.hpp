@@ -19,6 +19,17 @@ std::ostream& operator<<(std::ostream& os, const std::vector<T>& v) {
 }
 
 namespace nabla {
+
+template <typename T>
+std::ostream& operator<<(std::ostream& os, const std::vector<T>& v) {
+    os << "[";
+    for (size_t i = 0; i < v.size(); ++i) {
+        os << v[i]; if (i != v.size() - 1) os << ", ";
+    }
+    os << "]";
+    return os;
+}
+
     using RealVec = std::vector<double>;
     using Gradient = std::vector<double>;
     using DualVec = std::vector<Dual>;

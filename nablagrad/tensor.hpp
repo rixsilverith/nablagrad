@@ -61,7 +61,8 @@ namespace nabla {
         const std::string& get_name() const { return this->m_name; }
         void set_name(const std::string& name) { this->m_name = name; }
 
-        void backward() const;
+        std::vector<double> backward() const;
+        //void backward() const;
         void backward(double adjoint) const;
 
         bool is_composite() const { return this->m_dependencies.size() != 0; }
@@ -76,6 +77,7 @@ namespace nabla {
 
         friend Tensor MultBackward(const Tensor& ltensor, const Tensor& rtensor);
 
+        node_index_t node_gradtape_index = -1; // index of the corresponding computation node in the gradient tape
     private:
         static inline int tensor_id_counter = 0;
 
@@ -86,7 +88,6 @@ namespace nabla {
         // up and without triggering a bunch of error messages from our friend the compiler. Thus
         // this is it for now. A better implementation may work out in the future (hopefully).
         mutable double m_adjoint;
-        node_index_t node_gradtape_index = -1; // index of the corresponding computation node in the gradient tape
         std::vector<TensorDependencyNode> m_dependencies;
     };
 

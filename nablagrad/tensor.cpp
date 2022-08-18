@@ -1,9 +1,42 @@
 #include "tensor.hpp"
 #include "tensor_ops.hpp"
+#include "core.hpp"
 
 #include <iostream>
 
 namespace nabla {
+    std::vector<double> Tensor::backward() const {
+        //std::cout << "[nabla::Tensor::backward] called on tensor " << *this << std::endl;
+
+        node_index_t size = GradientTape::instance().get_tape().size();
+        std::vector<double> gradients(size, 0);
+        gradients.at(this->node_gradtape_index) = 1.0;
+
+        //std::cout << "grad: ";
+        //for (auto i : gradients) { std::cout << i << ", "; }
+        //std::cout << std::endl;
+        //std::cout << gradients << std::endl;
+
+        //std::cout << size << std::endl;
+
+        for (node_index_t i = size - 1; i >= 0; --i) {
+            const ComputationNode& node = GradientTape::instance().get_computation_node(i);
+
+            //std::cout << "propagating from node " << node << std::endl;
+            //std::cout << "tape index: " << i << std::endl;
+            // weight = localgrad for node * adjoint of the previous node
+            double weight = node.get_local_grad().first * gradients.at(i);
+            gradients.at(node.get_tensor_dependencies().first) += weight;
+
+            weight = node.get_local_grad().second * gradients.at(i);
+            gradients.at(node.get_tensor_dependencies().second) += weight;
+        }
+
+        //std::cout << "resulting gradient: " << gradients << std::endl;
+        return gradients;
+    }
+
+    /*
     void Tensor::backward() const {
         this->m_adjoint = 1.;
 
@@ -25,7 +58,7 @@ namespace nabla {
                       << " to tensor " << tensor_dep.get_tensor()->get_name() << std::endl;
             tensor_dep.get_tensor()->backward(adjoint);
         }
-    }
+    }*/
 
     void Tensor::backward(double adjoint) const {
         double adj = adjoint;

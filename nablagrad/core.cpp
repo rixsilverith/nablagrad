@@ -2,16 +2,18 @@
 #include <algorithm>
 
 namespace nabla {
-    // gradient computation using reverse-mode
+    // reverse-mode gradient computation
     std::function<Gradient(const RealVec&)> grad(std::function<Tensor(const TensorVec&)> f) {
         auto Df = [f](const RealVec& x) -> Gradient {
             TensorVec input_tensor(x.begin(), x.end());
-            f(input_tensor).backward(); // evaluate function at the given vector and backprop
-            
+            Gradient full_gradient = f(input_tensor).backward();
+
             size_t n = x.size();
             Gradient grad_vec(n);
-            for (size_t i = 0; i < n; ++i)
-                grad_vec.at(i) = input_tensor.at(i).get_adjoint();
+            for (size_t i = 0; i < n; ++i) {
+                node_index_t tensor_index = input_tensor.at(i).node_gradtape_index;
+                grad_vec.at(i) = full_gradient.at(tensor_index);
+            }
             return grad_vec;
         };
         return Df;
