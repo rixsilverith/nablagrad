@@ -123,4 +123,5 @@ the access the corresponding partial derivative in the gradient vector by its in
 ## References
 
 - Baydin, A. G.; Pearlmutter, B. A.; Radul, A. A.; Siskind, J. M. (2018). *Automatic differentiation in machine learning: a survey*. [https://arxiv.org/abs/1502.05767](https://arxiv.org/abs/1502.05767)
+- Wengert, R. E. (1964). *A simple automatic derivative evaluation program*. Comm. ACM. 7 (8): 463–464. [[doi]](https://doi.org/10.1145%2F355586.364791) 
 - *Automatic differentiation*. [Wikipedia](https://en.wikipedia.org/wiki/Automatic_differentiation).
