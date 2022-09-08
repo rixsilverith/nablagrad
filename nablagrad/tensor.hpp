@@ -46,10 +46,21 @@ namespace nabla {
         friend Tensor operator+(const Tensor& ltensor, const Tensor& rtensor);
         friend Tensor operator-(const Tensor& ltensor, const Tensor& rtensor);
         friend Tensor operator*(const Tensor& ltensor, const Tensor& rtensor);
+        friend Tensor operator/(const Tensor& ltensor, const Tensor& rtensor);
 
         friend std::ostream& operator<<(std::ostream& os, const Tensor& tensor);
 
+        friend Tensor AddBackward(const Tensor& ltensor, const Tensor& rtensor);
+        friend Tensor SubBackward(const Tensor& ltensor, const Tensor& rtensor);
         friend Tensor MultBackward(const Tensor& ltensor, const Tensor& rtensor);
+        friend Tensor DivBackward(const Tensor& ltensor, const Tensor& rtensor);
+
+        friend Tensor ExpBackward(const Tensor& tensor);
+        friend Tensor LogBackward(const Tensor& tensor);
+        friend Tensor PowerBackward(const Tensor& tensor, unsigned int pow);
+
+        friend Tensor SinBackward(const Tensor& tensor);
+        friend Tensor CosBackward(const Tensor& tensor);
 
         node_index_t node_gradtape_index = -1; // index of the corresponding computation node in the gradient tape
     private:

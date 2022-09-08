@@ -26,8 +26,20 @@ namespace nabla {
         return gradients;
     }
 
+    Tensor operator+(const Tensor& ltensor, const Tensor& rtensor) {
+        return AddBackward(ltensor, rtensor);
+    }
+
+    Tensor operator-(const Tensor& ltensor, const Tensor& rtensor) {
+        return SubBackward(ltensor, rtensor);
+    }
+
     Tensor operator*(const Tensor& ltensor, const Tensor& rtensor) {
         return MultBackward(ltensor, rtensor);
+    }
+
+    Tensor operator/(const Tensor& ltensor, const Tensor& rtensor) {
+        return DivBackward(ltensor, rtensor);
     }
 
     std::ostream& operator<<(std::ostream& os, const Tensor& tensor) {

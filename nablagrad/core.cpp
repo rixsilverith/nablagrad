@@ -30,7 +30,7 @@ namespace nabla {
             size_t n = x.size(); // dimension
             DualVec dual(x.begin(), x.end()); // transform x into a dual vector
             RealVec gradient(n);
-        
+
             for (size_t i = 0; i < n; ++i) {
                 dual[i].set_adjoint(1.); // enable differentiation wrt the i-th variable
                 gradient[i] = F(dual).get_adjoint(); // evaluate F using the dual vector and get the adjoint
