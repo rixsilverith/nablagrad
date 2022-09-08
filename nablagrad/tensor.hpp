@@ -62,6 +62,13 @@ namespace nabla {
         friend Tensor SinBackward(const Tensor& tensor);
         friend Tensor CosBackward(const Tensor& tensor);
 
+        friend Tensor exp(const Tensor& tensor);
+        friend Tensor log(const Tensor& tensor);
+        friend Tensor pow(const Tensor& tensor, unsigned int power);
+
+        friend Tensor sin(const Tensor& tensor);
+        friend Tensor cos(const Tensor& tensor);
+
         node_index_t node_gradtape_index = -1; // index of the corresponding computation node in the gradient tape
     private:
         static inline int tensor_id_counter = 0;

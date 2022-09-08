@@ -40,7 +40,7 @@ namespace nabla {
             { ltensor.node_gradtape_index, rtensor.node_gradtape_index });
 
         mult_tensor.node_gradtape_index = tensor_index;
-        std::cout << "Added tensor " << mult_tensor << " to computation graph" << std::endl;
+        std::cout << "Added mult_tensor " << mult_tensor << " to computation graph" << std::endl;
         return mult_tensor;
     }
 
@@ -79,7 +79,7 @@ namespace nabla {
             1 / tensor.m_primal, tensor.node_gradtape_index);
 
         log_tensor.node_gradtape_index = tensor_index;
-        std::cout << "Added tensor " << log_tensor << " to computation graph" << std::endl;
+        std::cout << "Added log_tensor " << log_tensor << " to computation graph" << std::endl;
         return log_tensor;
     }
 
@@ -105,7 +105,7 @@ namespace nabla {
             "sin_backward_" + std::to_string(ComputationNode::node_id_generator++),
             ::cos(tensor.m_primal), tensor.node_gradtape_index);
 
-        std::cout << "Added tensor " << sin_tensor << " to computation graph" << std::endl;
+        std::cout << "Added sin_tensor " << sin_tensor << " to computation graph" << std::endl;
         return sin_tensor;
     }
 
