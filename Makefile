@@ -4,19 +4,22 @@ LDFLAGS := -Lbuild -lnablagrad
 
 BUILD_DIR := build
 INSTALL_DIR := /usr/include
+INSTALL_LIB_DIR := /usr/lib
 NABLA_DIR := nablagrad
 SRCS := $(NABLA_DIR)/dual.cpp $(NABLA_DIR)/tensor.cpp $(NABLA_DIR)/core.cpp $(NABLA_DIR)/forward_ad.cpp $(NABLA_DIR)/gradient_tape.cpp $(NABLA_DIR)/tensor_ops.cpp
 OBJS := $(patsubst %.cpp,%.o,$(SRCS))
 EXAMPLES_DIR := examples
 EXAMPLES := $(EXAMPLES_DIR)/reverse_mode_gradient $(EXAMPLES_DIR)/forward_mode_partial_diff
 
+LIBRARY := libnablagrad.a
+
 .PHONY: all build examples install uninstall clean
 
 all: test
 
-build: $(BUILD_DIR)/libnablagrad.a
+build: $(BUILD_DIR)/$(LIBRARY)
 
-$(BUILD_DIR)/libnablagrad.a: $(OBJS)
+$(BUILD_DIR)/$(LIBRARY): $(OBJS)
 	@if [ ! -d "build" ]; then mkdir "build"; fi
 	ar rcs $@ $^
 
@@ -37,13 +40,15 @@ $(EXAMPLES_DIR)/forward_mode_partial_diff: $(EXAMPLES_DIR)/forward_mode_partial_
 test: $(NABLA_DIR)/main.o $(OBJS)
 	$(CC) -o $@ $(NABLA_DIR)/main.o $(OBJS)
 
-install:
+install: build
+	@cp $(BUILD_DIR)/$(LIBRARY) $(INSTALL_LIB_DIR)/$(LIBRARY)
 	@cp -r $(NABLA_DIR) $(INSTALL_DIR)
-	@echo "nablagrad installed to "$(INSTALL_DIR)""
+	@echo "nablagrad installed to "$(INSTALL_DIR)" and "$(INSTALL_LIB_DIR)""
 
 uninstall:
+	@rm $(INSTALL_LIB_DIR)/$(LIBRARY)
 	@rm -r $(INSTALL_DIR)/$(NABLA_DIR)
 	@echo "nablagrad uninstalled"
 
 clean:
-	rm $(NABLA_DIR)/*.o test
+	rm -f $(NABLA_DIR)/*.o $(EXAMPLES_DIR)/*.o $(BUILD_DIR)/$(LIBRARY) $(EXAMPLES) test
