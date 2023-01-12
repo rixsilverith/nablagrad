@@ -4,6 +4,8 @@
 #include <vector>
 #include <stdexcept>
 #include <numeric> // std::acumulate
+#include <random>
+#include <chrono>
 
 template<typename... T>
 std::string strformat(const char *fmt, T... args) {
@@ -46,11 +48,25 @@ struct Tensor {
         compute_stride_from_shape();
     }
 
+
     static Tensor ones(const std::vector<size_t>& shape, bool grad=false) {
         int size = std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<size_t>());
         std::vector<double> v(size);
         fill(v.begin(), v.end(), 1);
         return Tensor(v, shape, grad);
+    }
+
+    static Tensor rand(const std::vector<size_t>& shape, bool grad=false) {
+        unsigned int rseed = std::chrono::system_clock::now().time_since_epoch().count();
+        std::default_random_engine rgen(rseed);
+        std::uniform_real_distribution<double> U(0.0, 1.0);
+        size_t tensor_size = std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<size_t>());
+        std::vector<double> tensor_data(tensor_size);
+
+        for (size_t i = 0; i < tensor_size; i++)
+            tensor_data[i] = U(rgen);
+
+        return Tensor(tensor_data, shape, grad);
     }
 
     double& at(const std::vector<size_t> indices) {
@@ -68,7 +84,37 @@ struct Tensor {
 
     Tensor flatten() { return Tensor(data_, {1, data_.size()}, requires_grad_); }
 
+    void show() { show_({0, data_.size() - 1}, shape_, stride_, false); }
+
 private:
+    void show_(std::vector<size_t> indices, std::vector<size_t> shape, std::vector<size_t> stride, bool is_last) {
+        if (shape.size() == 1) {
+            std::cout << "[";
+            for (size_t i = indices[0]; i <= indices[1]; i++) {
+                std::cout << data_[i];
+                if (i != indices[1]) std::cout << ", ";
+            }
+            std::cout << "]";
+            if (!is_last) std::cout << ", ";
+            return;
+        }
+
+        std::cout << "[";
+        size_t low_index = 0;
+        size_t high_index = stride[0] - 1;
+        for (size_t i = 0; i < shape[0]; i++) {
+            std::vector<size_t> ushape(shape);
+            std::vector<size_t> ustride(stride);
+            ushape.erase(ushape.begin());
+            ustride.erase(ustride.begin());
+            if (i == shape[0] - 1) is_last = true;
+            show_({low_index, high_index}, ushape, ustride, is_last);
+            low_index += stride[0];
+            high_index += stride[0];
+        }
+        std::cout << "]\n";
+    }
+
     size_t flatten_index(const std::vector<size_t>& indices) const {
         if (indices.size() != shape_.size())
             throw std::out_of_range("Incorrect tensor shape");
@@ -117,10 +163,12 @@ std::ostream& operator<<(std::ostream& os, const nabla::Tensor& tensor) {
 }
 
 int main() {
-    nabla::Tensor x = nabla::Tensor::ones({2, 5, 3}, /*grad=*/true);
-    std::cout << x << "\n";
+    nabla::Tensor r = nabla::Tensor::rand({2, 5});
+    std::cout << r << "\n";
 
-    std::cout << x.at({1, 7, 2}) << std::endl;
+    nabla::Tensor t = nabla::Tensor::rand({2, 2});
+    std::cout << t << "\n";
+    t.show();
 
     return 0;
 }
