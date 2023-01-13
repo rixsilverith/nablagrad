@@ -81,38 +81,50 @@ struct Tensor {
     const std::vector<size_t>& shape() const { return shape_; }
     const std::vector<size_t>& stride() const { return stride_; }
     const std::vector<double>& data() const { return data_; }
+    bool requires_grad() const { return requires_grad_; }
 
     Tensor flatten() { return Tensor(data_, {1, data_.size()}, requires_grad_); }
 
-    void show() { show_({0, data_.size() - 1}, shape_, stride_, false); }
+    // string representation of the tensor data according to its shape
+    // TODO: make this method private
+    std::string to_string_() const {
+        return data_to_string_({0, data_.size() - 1}, shape_, stride_, false);
+    }
 
 private:
-    void show_(std::vector<size_t> indices, std::vector<size_t> shape, std::vector<size_t> stride, bool is_last) {
+    // TODO: refactor/clarify/document/provide some insight about how this works
+    std::string data_to_string_(
+        const std::vector<size_t>& indices,
+        const std::vector<size_t>& shape,
+        const std::vector<size_t>& stride,
+        bool is_last
+    ) const {
+        std::string data_str = "[";
         if (shape.size() == 1) {
-            std::cout << "[";
             for (size_t i = indices[0]; i <= indices[1]; i++) {
-                std::cout << data_[i];
-                if (i != indices[1]) std::cout << ", ";
+                data_str.append(std::to_string(data_[i]));
+                if (i != indices[1]) data_str.append(", ");
             }
-            std::cout << "]";
-            if (!is_last) std::cout << ", ";
-            return;
+            data_str.append("]");
+            if (!is_last) data_str.append(", ");
+            return data_str;
         }
 
-        std::cout << "[";
         size_t low_index = 0;
         size_t high_index = stride[0] - 1;
+        std::vector<size_t> ushape(shape);
+        std::vector<size_t> ustride(stride);
+        ushape.erase(ushape.begin());
+        ustride.erase(ustride.begin());
+
         for (size_t i = 0; i < shape[0]; i++) {
-            std::vector<size_t> ushape(shape);
-            std::vector<size_t> ustride(stride);
-            ushape.erase(ushape.begin());
-            ustride.erase(ustride.begin());
             if (i == shape[0] - 1) is_last = true;
-            show_({low_index, high_index}, ushape, ustride, is_last);
+            data_str.append(data_to_string_({low_index, high_index}, ushape, ustride, is_last));
             low_index += stride[0];
             high_index += stride[0];
         }
-        std::cout << "]\n";
+        data_str.append("]");
+        return data_str;
     }
 
     size_t flatten_index(const std::vector<size_t>& indices) const {
@@ -157,18 +169,15 @@ private:
 }
 
 std::ostream& operator<<(std::ostream& os, const nabla::Tensor& tensor) {
-    os << "nabla::Tensor(" << tensor.data() << ", shape: " << tensor.shape()
-        << ", name: " << tensor.name() << ")";
+    os << "nabla::Tensor(name: " << tensor.name() << ", shape: " << tensor.shape()
+       << ", requires_grad: " << tensor.requires_grad() << ", data: " << tensor.to_string_() << ")";
+
     return os;
 }
 
 int main() {
-    nabla::Tensor r = nabla::Tensor::rand({2, 5});
-    std::cout << r << "\n";
-
     nabla::Tensor t = nabla::Tensor::rand({2, 2});
     std::cout << t << "\n";
-    t.show();
 
     return 0;
 }
