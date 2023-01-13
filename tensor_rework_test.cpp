@@ -44,10 +44,10 @@ struct Tensor {
         if (data_.size() != std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<size_t>()))
             throw std::invalid_argument("Data size does not match the shape of the tensor");
 
+        size_ = std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<size_t>());
         name_ = "tensor_" + std::to_string(tensor_next_id_++);
         compute_stride_from_shape();
     }
-
 
     static Tensor ones(const std::vector<size_t>& shape, bool grad=false) {
         int size = std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<size_t>());
@@ -69,6 +69,7 @@ struct Tensor {
         return Tensor(tensor_data, shape, grad);
     }
 
+
     double& at(const std::vector<size_t> indices) {
         return data_[flatten_index(indices)];
     }
@@ -82,6 +83,7 @@ struct Tensor {
     const std::vector<size_t>& stride() const { return stride_; }
     const std::vector<double>& data() const { return data_; }
     bool requires_grad() const { return requires_grad_; }
+    size_t size() const { return size_; }
 
     Tensor flatten() { return Tensor(data_, {1, data_.size()}, requires_grad_); }
 
@@ -162,6 +164,7 @@ private:
     std::vector<size_t> stride_;
     std::string name_;
     bool requires_grad_;
+    size_t size;
 
     static inline int tensor_next_id_ = 0;
 };

@@ -4,78 +4,90 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <stdexcept>
+#include <numeric> // std::accumulate
 
-#include "gradient_tape.hpp"
+/* #include "gradient_tape.hpp" */
 
 namespace nabla {
-    struct Tensor {
-        static inline const bool NO_GRAD = false;
+struct Tensor {
+    /* Tensor( */
+    /*     const std::string& name, std::vector<size_t> data, */
+    /*     const std::vector<size_t>& shape, bool requires_grad=false */
+    /* ); */
+    /* Tensor(std::vector<double> data, const std::vector<size_t>& shape, bool grad=false) */
+    /*     : data_{flatten_vec_(data)}, shape_{shape}, requires_grad_{grad} { */
+    /*     if (data_.size() != std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<size_t>())) */
+    /*         throw std::invalid_argument("Data size does not match the shape of the tensor"); */
 
-        Tensor(const Tensor& tensor) : m_name{tensor.m_name}, m_primal{tensor.m_primal} {
-            std::cout << "! copying tensor " << tensor << std::endl;
-        }
+    /*     name_ = "tensor_" + std::to_string(tensor_next_id_++); */
+    /*     compute_stride_from_shape(); */
+    /* } */
 
-        Tensor(Tensor&& tensor) noexcept : m_name{tensor.m_name} {
-            std::cout << "! moved tensor" << std::endl;
-            this->m_primal = tensor.m_primal;
-            this->node_gradtape_index = tensor.node_gradtape_index;
-        }
+    Tensor(const std::vector<size_t>& shape, bool requires_grad=false);
+    Tensor(const std::string& name, const std::vector<size_t>& shape, bool requires_grad=false);
 
-        Tensor(double primal, bool trace_grad = true) : m_primal{primal} {
-            this->m_name = "tensor_" + std::to_string(tensor_id_counter++);
-            if (trace_grad) {
-                node_index_t idx = GradientTape::instance().push_leaf_node(this->m_name);
-                this->node_gradtape_index = idx;
-            }
-            std::cout << "Init tensor " << *this << std::endl;
-        }
+    static Tensor rand(const std::vector<size_t>& shape, bool grad=false);
+    static Tensor zeros(const std::vector<size_t>& shape, bool grad=false);
+    static Tensor ones(const std::vector<size_t>& shape, bool grad=false);
 
-        ~Tensor() {
-            std::cout << "Destroyed " << *this << std::endl;
-        }
+    double& at(const std::vector<size_t>& indices);
+    const double& at(const std::vector<size_t>& indices) const;
 
-        double get_primal() const { return this->m_primal; }
-        void set_primal(double primal) { this->m_primal = primal; }
+    const std::string& name() const { return name_; }
+    const std::vector<size_t>& shape() const { return shape_; }
+    const std::vector<size_t>& stride() const { return stride_; }
+    const std::vector<double>& data() const { return data_; }
+    bool requires_grad() const { return requires_grad_; }
+    size_t size() const { return size_; }
 
-        const std::string& get_name() const { return this->m_name; }
-        void set_name(const std::string& name) { this->m_name = name; }
+    Tensor flatten() {
+        Tensor flat_tensor({1, data_.size()}, requires_grad_);
+        flat_tensor.data_ = data_;
+        return flat_tensor;
+    }
 
-        std::vector<double> backward() const;
-        void backward(double adjoint) const;
+    // string representation of the tensor data according to its shape
+    // TODO: make this method private
+    std::string to_string_() const {
+        return data_to_string_({0, data_.size() - 1}, shape_, stride_, false);
+    }
 
-        friend Tensor operator+(const Tensor& ltensor, const Tensor& rtensor);
-        friend Tensor operator-(const Tensor& ltensor, const Tensor& rtensor);
-        friend Tensor operator*(const Tensor& ltensor, const Tensor& rtensor);
-        friend Tensor operator/(const Tensor& ltensor, const Tensor& rtensor);
+    friend std::ostream& operator<<(std::ostream& os, const Tensor& self);
 
-        friend std::ostream& operator<<(std::ostream& os, const Tensor& tensor);
+private:
+    std::string generate_default_name_();
+    std::vector<size_t> compute_stride_from_shape_(const std::vector<size_t>& shape);
 
-        friend Tensor AddBackward(const Tensor& ltensor, const Tensor& rtensor);
-        friend Tensor SubBackward(const Tensor& ltensor, const Tensor& rtensor);
-        friend Tensor MultBackward(const Tensor& ltensor, const Tensor& rtensor);
-        friend Tensor DivBackward(const Tensor& ltensor, const Tensor& rtensor);
+    // TODO: refactor/clarify/document/provide some insight about how this works
+    std::string data_to_string_(
+        const std::vector<size_t>& indices,
+        const std::vector<size_t>& shape,
+        const std::vector<size_t>& stride,
+        bool is_last
+    ) const;
 
-        friend Tensor ExpBackward(const Tensor& tensor);
-        friend Tensor LogBackward(const Tensor& tensor);
-        friend Tensor PowerBackward(const Tensor& tensor, unsigned int pow);
+    size_t flatten_index_(const std::vector<size_t>& indices) const;
 
-        friend Tensor SinBackward(const Tensor& tensor);
-        friend Tensor CosBackward(const Tensor& tensor);
+    /* void compute_stride_from_shape(); */
 
-        friend Tensor exp(const Tensor& tensor);
-        friend Tensor log(const Tensor& tensor);
-        friend Tensor pow(const Tensor& tensor, unsigned int power);
+    template<typename X>
+    std::vector<double> flatten_vec_(const std::vector<X>& vec) {
+        std::vector<double> f;
+        flatten_helper(vec, f);
+        return f;
+    }
 
-        friend Tensor sin(const Tensor& tensor);
-        friend Tensor cos(const Tensor& tensor);
+    std::string name_;
+    std::vector<size_t> shape_;
+    std::vector<size_t> stride_;
+    std::vector<double> data_;
+    size_t size_;
+    bool requires_grad_;
 
-        node_index_t node_gradtape_index = -1; // index of the corresponding computation node in the gradient tape
-    private:
-        static inline int tensor_id_counter = 0;
+    static inline int tensor_next_id_ = 0;
+};
 
-        std::string m_name;
-        double m_primal;
-    };
 } // namespace nabla
 
 #endif
