@@ -11,19 +11,6 @@
 
 namespace nabla {
 struct Tensor {
-    /* Tensor( */
-    /*     const std::string& name, std::vector<size_t> data, */
-    /*     const std::vector<size_t>& shape, bool requires_grad=false */
-    /* ); */
-    /* Tensor(std::vector<double> data, const std::vector<size_t>& shape, bool grad=false) */
-    /*     : data_{flatten_vec_(data)}, shape_{shape}, requires_grad_{grad} { */
-    /*     if (data_.size() != std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<size_t>())) */
-    /*         throw std::invalid_argument("Data size does not match the shape of the tensor"); */
-
-    /*     name_ = "tensor_" + std::to_string(tensor_next_id_++); */
-    /*     compute_stride_from_shape(); */
-    /* } */
-
     Tensor(const std::vector<size_t>& shape, bool requires_grad=false);
     Tensor(const std::string& name, const std::vector<size_t>& shape, bool requires_grad=false);
 
@@ -47,8 +34,6 @@ struct Tensor {
         return flat_tensor;
     }
 
-    // string representation of the tensor data according to its shape
-    // TODO: make this method private
     std::string to_string_() const {
         return data_to_string_({0, data_.size() - 1}, shape_, stride_, false);
     }
@@ -59,7 +44,6 @@ private:
     std::string generate_default_name_();
     std::vector<size_t> compute_stride_from_shape_(const std::vector<size_t>& shape);
 
-    // TODO: refactor/clarify/document/provide some insight about how this works
     std::string data_to_string_(
         const std::vector<size_t>& indices,
         const std::vector<size_t>& shape,
@@ -68,8 +52,6 @@ private:
     ) const;
 
     size_t flatten_index_(const std::vector<size_t>& indices) const;
-
-    /* void compute_stride_from_shape(); */
 
     template<typename X>
     std::vector<double> flatten_vec_(const std::vector<X>& vec) {

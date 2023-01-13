@@ -8,18 +8,6 @@
 
 namespace nabla {
 
-// generic tensor creation method
-/* Tensor::Tensor( */
-/*     const std::string& name, std::vector<size_t> data, */
-/*     const std::vector<size_t>& shape, bool requires_grad=false */
-/* ) : name_{name}, data_{data}, shape_{shape}, requires_grad_{requires_grad} { */
-/*     if (data_.size() != std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<size_t>())) */
-/*         throw std::invalid_argument("Data size does not match the shape of the tensor"); */
-
-/*     name_ = "tensor_" + std::to_string(tensor_next_id_++); */
-/*     compute_stride_from_shape(); */
-/* } */
-
 // tensor base constructor
 Tensor::Tensor(const std::string& name, const std::vector<size_t>& shape, bool requires_grad)
     : name_{name}, shape_{shape}, requires_grad_{requires_grad}
@@ -65,13 +53,6 @@ double& Tensor::at(const std::vector<size_t>& indices) {
 const double& Tensor::at(const std::vector<size_t>& indices) const {
     return this->data_[this->flatten_index_(indices)];
 }
-
-/* void Tensor::compute_stride_from_shape_() { */
-/*     this->stride_.resize(this->shape_.size()); */
-/*     this->stride_[this->shape_.size() - 1] = 1; */
-/*     for (int i = this->shape_.size() - 2; i++) */
-/*         stride_[i] = stride_[i + 1] * shape_[i + 1]; */
-/* } */
 
 std::vector<size_t> Tensor::compute_stride_from_shape_(const std::vector<size_t>& shape) {
     std::vector<size_t> stride(shape.size());
@@ -140,46 +121,4 @@ std::ostream& operator<<(std::ostream& os, const Tensor& self) {
     return os;
 }
 
-    /* std::vector<double> Tensor::backward() const { */
-    /*     std::cout << "[nabla::Tensor::backward] called on tensor " << *this << std::endl; */
-
-    /*     node_index_t size = GradientTape::instance().get_tape().size(); */
-    /*     std::vector<double> gradients(size, 0); */
-    /*     gradients.at(this->node_gradtape_index) = 1.0; */
-
-    /*     for (node_index_t i = size - 1; i >= 0; --i) { */
-    /*         const ComputationNode& node = GradientTape::instance().get_computation_node(i); */
-
-    /*         // weight = localgrad for node * adjoint of the previous node */
-    /*         double weight = node.get_local_grad().first * gradients.at(i); */
-    /*         gradients.at(node.get_tensor_dependencies().first) += weight; */
-
-    /*         weight = node.get_local_grad().second * gradients.at(i); */
-    /*         gradients.at(node.get_tensor_dependencies().second) += weight; */
-    /*     } */
-
-    /*     return gradients; */
-    /* } */
-
-    /* Tensor operator+(const Tensor& ltensor, const Tensor& rtensor) { */
-    /*     return AddBackward(ltensor, rtensor); */
-    /* } */
-
-    /* Tensor operator-(const Tensor& ltensor, const Tensor& rtensor) { */
-    /*     return SubBackward(ltensor, rtensor); */
-    /* } */
-
-    /* Tensor operator*(const Tensor& ltensor, const Tensor& rtensor) { */
-    /*     return MultBackward(ltensor, rtensor); */
-    /* } */
-
-    /* Tensor operator/(const Tensor& ltensor, const Tensor& rtensor) { */
-    /*     return DivBackward(ltensor, rtensor); */
-    /* } */
-
-    /* std::ostream& operator<<(std::ostream& os, const Tensor& tensor) { */
-    /*     os << "nabla::Tensor[name: " << tensor.m_name << ", primal: " << tensor.m_primal */
-    /*        << ", grad_tape_node_index: " << tensor.node_gradtape_index << "]"; */
-    /*     return os; */
-    /* } */
 } // namespace nabla

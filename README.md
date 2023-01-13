@@ -1,12 +1,22 @@
 [![License](https://img.shields.io/github/license/rixsilverith/nablagrad?color=g)](https://mit-license.org/)
 ![Cpp Version](https://img.shields.io/badge/C%2B%2B-17+-green)
 
-# ∇grad (nablagrad) automatic differentiation engine
+# ∇grad: tensor processing library + automatic differentiation engine
+
+**NOTE: This library is in a pretty early development stage, so expect main branch to be broken
+from time to time. Also, the API is prone to frequent breaking changes.**
+
+Tensors, also known as multidimensional arrays, are ubiquitous data structures in many computing fields,
+such as machine learning and scientific computing, that can be used to represent high-dimensional data,
+incluing but not limited to images, audio, gradient vectors, any kind of matrix or the inputs of a
+mathematical function as a vector.
 
 Automatic differentiation is a technique to automatically perform efficient and analytically precise partial
-differentiation on a given mathematical function or expression.
+differentiation on a given mathematical expression.
 
-*nablagrad* is yet another automatic differentiation engine supporting both forward and reverse-mode autodiff.
+∇grad (nablagrad) is yet another tensor processing library for C++ that incorporates an automatic
+differentiation engine supporting both forward and reverse-mode autodiff on tensors.
+
 Examples can be found in the [examples](examples) directory.
 
 ---
