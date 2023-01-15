@@ -2,7 +2,6 @@
 /* #include "tensor_ops.hpp" */
 /* #include "core.hpp" */
 
-
 #include <iostream>
 #include <algorithm> // std::reverse
 
@@ -47,11 +46,11 @@ std::string Tensor::generate_default_name_() {
 }
 
 double& Tensor::at(const std::vector<size_t>& indices) {
-    return this->data_[this->flatten_index_(indices)];
+    return data_[flatten_index_(indices)];
 }
 
 const double& Tensor::at(const std::vector<size_t>& indices) const {
-    return this->data_[this->flatten_index_(indices)];
+    return data_[flatten_index_(indices)];
 }
 
 Tensor Tensor::t() const {
@@ -95,127 +94,40 @@ size_t Tensor::flatten_index_(const std::vector<size_t>& indices) const {
     return index;
 }
 
-/* std::string Tensor::data_to_string_(const std::vector<size_t>& indices, */
-/*                                     const std::vector<size_t>& shape, */
-/*                                     const std::vector<size_t>& stride, */
-/*                                     bool is_last) const { */
-/*     std::string data_str = "["; */
-/*     if (shape.size() == 1) { */
-/*             std::cout << "-- begin processing innermost tensor dimension: chunk [" */
-/*                     << indices[0] << ", " << indices[1] << "]\n"; */
-/*             std::cout << "-- current shape: " << shape << ", current stride: " << stride << "\n"; */
-
-/*         // here indices is a vector of the form {begin_index, end_index} */
-/*         // which represent which part of the plain data vector to take */
-/*         for (size_t i = indices[0]; i <= indices[1]; i++) { */
-/*             data_str.append(std::to_string(data_[i])); */
-/*             if (i != indices[1]) data_str.append(", "); */
-/*         } */
-/*         data_str.append("]"); */
-/*         if (!is_last) data_str.append(", "); */
-/*         return data_str; */
-/*     } */
-
-/*     size_t low_index = 0; */
-/*     size_t high_index = stride[0] - 1; */
-/*     std::vector<size_t> ushape(shape); */
-/*     std::vector<size_t> ustride(stride); */
-/*     ushape.erase(ushape.begin()); */
-/*     ustride.erase(ustride.begin()); */
-
-/*     std::cout << "-- begin processing tensor dimension: chunk [" */
-/*         << low_index << ", " << high_index << "]\n"; */
-/*     std::cout << "-- current shape: " << ushape << ", current stride: " << ustride << "\n"; */
-
-/*     for (size_t i = 0; i < shape[0]; i++) { */
-/*         if (i == shape[0] - 1) is_last = true; */
-/*         data_str.append(data_to_string_({low_index, high_index}, ushape, ustride, is_last)); */
-/*         low_index += stride[0]; */
-/*         high_index += stride[0]; */
-/*     } */
-/*     data_str.append("]"); */
-/*     return data_str; */
-/* } */
-
-
-std::string Tensor::data_to_string_(size_t low_index, const std::vector<size_t>& indices,
-                                    const std::vector<size_t>& shape,
-                                    const std::vector<size_t>& stride,
-                                    bool is_last, size_t dim) const {
-
+std::string Tensor::_data_to_string_(size_t index0, size_t dim) const {
     std::string data_str = "[";
-    if (dim == shape_.size() - 1) { // base case for recursion: innermost dimension
-            /* std::cout << "-- begin processing innermost tensor dimension: chunk [" */
-            /*         << indices[0] << ", " << indices[1] << "]\n"; */
-            /* std::cout << "-- current shape: " << shape << ", current stride: " << stride << "\n"; */
 
-        // here indices is a vector of the form {begin_index, end_index}
-        // which represent which part of the plain data vector to take
-        /* std::cout << "--dim: " << dim << ", low: " << indices[0] << ", high: " << indices[1] << "\n"; */
-
-        for (size_t i = low_index; i <= low_index + shape[dim] - 1; i++) {
-            /* std::cout << "-- dim: " << dim << ", low_index: " << i << " c_stride: " << 1 << "\n"; */
+    // Base case for recursion: innermost dimension
+    if (dim == shape_.size() - 1) {
+        for (size_t i = index0; i <= index0 + shape_[dim] - 1; i++) {
             data_str.append(std::to_string(data_[i]));
-            if (i != low_index + shape[dim] - 1) data_str.append(", ");
+            if (i != index0 + shape_[dim] - 1) data_str.append(", ");
         }
-
-        /* for (size_t i = indices[0]; i <= indices[1]; i++) { */
-        /*     data_str.append(std::to_string(data_[i])); */
-        /*     if (i != indices[1]) data_str.append(", "); */
-        /* } */
         data_str.append("]");
-        /* if (!is_last) data_str.append(", "); */
         return data_str;
     }
 
-    /* size_t low_index = 0; */
-    /* size_t high_index = stride[0] - 1; */
-    /* size_t low_index = indices[0]; */
-    /* size_t high_index = indices[1]; */
-    /* std::vector<size_t> ushape(shape); */
-    /* std::vector<size_t> ustride(stride); */
-    /* ushape.erase(ushape.begin()); */
-    /* ustride.erase(ustride.begin()); */
-
-
-
-    /* std::cout << "-- begin processing tensor dimension: chunk [" */
-    /*     << low_index << ", " << high_index << "]\n"; */
-    /* std::cout << "-- current shape: " << ushape << ", current stride: " << ustride << "\n"; */
-
-    for (size_t i = 0; i < shape[dim]; i++) {
-    /* std::cout << "-- dim: " << dim << ", low_index: " << low_index << " c_stride: " << stride[dim] - 1 << "\n"; */
-        /* is_last = (i == shape[dim] - 1); */
-        data_str.append(data_to_string_(low_index, {}, shape, stride, is_last, dim + 1));
-        if (i != shape[dim] - 1) data_str.append(", ");
-        if (i != shape[dim] - 1 && dim == 0) {
-            data_str.append("\n ");
-            /* for (size_t j = 0; j < shape.size(); j++) data_str.append(" "); */
-        }
-        low_index += stride[dim];
+    // Recurse for each element in the current dimension
+    for (size_t i = 0; i < shape_[dim]; i++) {
+        data_str.append(_data_to_string_(index0, dim + 1));
+        if (i != shape_[dim] - 1) data_str.append(", ");
+        // Add a newline between elements in the outermost dimension
+        if (i != shape_[dim] - 1 && dim == 0) data_str.append("\n ");
+        // stride_[dim] is the offset between elements in the current dimension
+        index0 += stride_[dim];
     }
-
-
-    /* for (size_t i = 0; i < shape[dim]; i++) { */
-    /*     std::cout << "--dim: " << dim << ", low: " << low_index << ", high: " << high_index << "\n"; */
-    /*     if (i == shape[dim] - 1) is_last = true; */
-    /*     data_str.append(data_to_string_({low_index, stride[dim + 1] - 1}, shape, stride, is_last, dim + 1)); */
-    /*     low_index += stride[dim]; */
-    /*     high_index += stride[dim]; */
-    /* } */
     data_str.append("]");
-    /* if (!is_last) data_str.append(", "); */
     return data_str;
 }
 
 std::ostream& operator<<(std::ostream& os, const Tensor& tensor) {
     os << "nabla::Tensor[shape: [";
+    // For some reason printing 'tensor.shape_' directly leads to an infinite
+    // recursion here. So we just manually print the 'tensor.shape_' vector.
     for (size_t i = 0; i < tensor.shape_.size(); i++) {
-        os << tensor.shape_[i]; if (i != tensor.shape_.size() - 1) os << ", ";
-    }
+        os << tensor.shape_[i]; if (i != tensor.shape_.size() - 1) os << ", "; }
     os << "], requires_grad: " << tensor.requires_grad_ << "]\n";
-    os << tensor.to_string_();
-
+    os << tensor._data_to_string_();
     return os;
 }
 

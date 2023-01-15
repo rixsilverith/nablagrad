@@ -44,31 +44,21 @@ struct Tensor {
         return flat_tensor;
     }
 
-    std::string to_string_() const {
-        // here we need to initialize the recursive call with the outermost
-        // first chunk of data, that is, [0, stride[0]-1]
-        // the internal call will manage to traverse the whole data array
-        // from the shape
-        return data_to_string_(0, {0, stride_[0] - 1}, shape_, stride_, shape_.size() == 1);
-    }
-
-    friend std::ostream& operator<<(std::ostream& os, const Tensor& tensor);
-
     std::vector<double> raw_data() const { return data_; }
     void setdata(std::vector<double> v) { data_ = v; }
+
+    friend std::ostream& operator<<(std::ostream& os, const Tensor& tensor);
 
 private:
     std::string generate_default_name_();
     std::vector<size_t> compute_stride_from_shape_(const std::vector<size_t>& shape) const;
     size_t flatten_index_(const std::vector<size_t>& indices) const;
 
-    std::string data_to_string_(
-            size_t low_index,
-        const std::vector<size_t>& indices,
-        const std::vector<size_t>& shape,
-        const std::vector<size_t>& stride,
-        bool is_last, size_t dim=0
-    ) const;
+    // Convert internal tensor data into a string representation according to its shape.
+    // 'index0' represents the begin index of the current chunk of data being processed.
+    // 'dim' is the current dimension (i.e. element of Tensor::shape_) which is being processed.
+    // Both default to 0 and are passed down the recursion.
+    std::string _data_to_string_(size_t index0=0, size_t dim=0) const;
 
     template<typename X>
     std::vector<double> flatten_vec_(const std::vector<X>& vec) {
