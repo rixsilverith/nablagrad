@@ -11,12 +11,13 @@ SRCS := $(NABLA_DIR)/tensor.cpp
 OBJS := $(patsubst %.cpp,%.o,$(SRCS))
 EXAMPLES_DIR := examples
 EXAMPLES := $(EXAMPLES_DIR)/reverse_mode_gradient $(EXAMPLES_DIR)/forward_mode_partial_diff
+TESTS_DIR := test
 
 LIBRARY := libnablagrad.a
 
 .PHONY: all build examples install uninstall clean
 
-all: test
+all: main_test
 
 build: $(BUILD_DIR)/$(LIBRARY)
 
@@ -38,8 +39,11 @@ $(EXAMPLES_DIR)/reverse_mode_gradient: $(EXAMPLES_DIR)/reverse_mode_gradient.o
 $(EXAMPLES_DIR)/forward_mode_partial_diff: $(EXAMPLES_DIR)/forward_mode_partial_diff.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-test: $(NABLA_DIR)/main.o $(OBJS)
+main_test: $(NABLA_DIR)/main.o $(OBJS)
 	$(CC) -o $@ $(NABLA_DIR)/main.o $(OBJS)
+
+test_tensor: $(TESTS_DIR)/test_tensor.o $(OBJS)
+	$(CC) -o $@ $(TESTS_DIR)/test_tensor.o $(OBJS)
 
 install: build
 	@cp $(BUILD_DIR)/$(LIBRARY) $(INSTALL_LIB_DIR)/$(LIBRARY)
@@ -52,4 +56,4 @@ uninstall:
 	@echo "nablagrad uninstalled"
 
 clean:
-	rm -f $(NABLA_DIR)/*.o $(EXAMPLES_DIR)/*.o $(BUILD_DIR)/$(LIBRARY) $(EXAMPLES) test
+	rm -f $(NABLA_DIR)/*.o $(EXAMPLES_DIR)/*.o $(BUILD_DIR)/$(LIBRARY) $(EXAMPLES) main_test
