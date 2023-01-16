@@ -3,6 +3,7 @@
 /* #include "core.hpp" */
 
 #include <iostream>
+#include <iomanip>
 #include <algorithm> // std::reverse
 
 namespace nabla {
@@ -99,6 +100,9 @@ std::string Tensor::_data_to_string_(size_t index0, size_t dim) const {
 
     // Base case for recursion: innermost dimension
     if (dim == shape_.size() - 1) {
+        // here 'shape_[dim]' is the number of elements in the current (innermost)
+        // dimension. Since data is stored in 'row-major' format just iterate over the
+        // base data vector interval [index0, index0 + shape_[dim] - 1]
         for (size_t i = index0; i <= index0 + shape_[dim] - 1; i++) {
             data_str.append(std::to_string(data_[i]));
             if (i != index0 + shape_[dim] - 1) data_str.append(", ");
@@ -107,26 +111,35 @@ std::string Tensor::_data_to_string_(size_t index0, size_t dim) const {
         return data_str;
     }
 
-    // Recurse for each element in the current dimension
+    // Iterate over each element in the current dimension
     for (size_t i = 0; i < shape_[dim]; i++) {
         data_str.append(_data_to_string_(index0, dim + 1));
-        if (i != shape_[dim] - 1) data_str.append(", ");
-        // Add a newline between elements in the outermost dimension
-        if (i != shape_[dim] - 1 && dim == 0) data_str.append("\n ");
-        // stride_[dim] is the offset between elements in the current dimension
-        index0 += stride_[dim];
+        // add a linebreak if the current element is not the last
+        // also add the corresponding spacing (1 + dim) to keep elements horizontally aligned
+        if (i != shape_[dim] - 1) {
+            data_str.append("\n"); // each element in a separate line
+            // for tensors with ndim > 2 each element in the current dimension is separated by
+            // `(ndim - 2) - dim` blank lines (e.g. in a tensor with ndim = 3, elements in the
+            // outermost dimension (dim = 0) are separated by one blank line)
+            for (size_t j = dim; j < shape_.size() - 2; j++) data_str.append("\n");
+            // add `dim + 1` spaces to the current element so that it is horizontally aligned
+            // according to its dimension
+            for (size_t j = 0; j <= dim; j++) data_str.append(" ");
+        }
+        index0 += stride_[dim]; // add offset between elements in the current dimension
     }
     data_str.append("]");
     return data_str;
 }
 
 std::ostream& operator<<(std::ostream& os, const Tensor& tensor) {
-    os << "nabla::Tensor[shape: [";
+    os << std::boolalpha; // true/false for booleans instead of 1/0
+    os << "nabla::Tensor[shape: (";
     // For some reason printing 'tensor.shape_' directly leads to an infinite
     // recursion here. So we just manually print the 'tensor.shape_' vector.
     for (size_t i = 0; i < tensor.shape_.size(); i++) {
         os << tensor.shape_[i]; if (i != tensor.shape_.size() - 1) os << ", "; }
-    os << "], requires_grad: " << tensor.requires_grad_ << "]\n";
+    os << "), requires_grad: " << tensor.requires_grad_ << "]\n";
     os << tensor._data_to_string_();
     return os;
 }
