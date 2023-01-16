@@ -5,6 +5,7 @@
 #include <vector>
 #include <string>
 #include <stdexcept>
+#include <functional>
 #include <numeric> // std::accumulate
 
 #include "helpers.hpp"
@@ -32,13 +33,14 @@ namespace nabla {
 
         const std::string& name() const { return name_; }
         const std::vector<size_t>& shape() const { return shape_; }
+        size_t ndim() const { return shape_.size(); }
         const std::vector<size_t>& stride() const { return stride_; }
         const std::vector<double>& data() const { return data_; }
         bool requires_grad() const { return requires_grad_; }
         size_t size() const { return size_; }
 
         Tensor flatten() {
-            Tensor flat_tensor({1, data_.size()}, requires_grad_);
+            Tensor flat_tensor({data_.size()}, requires_grad_);
             flat_tensor.data_ = data_;
             return flat_tensor;
         }
@@ -46,12 +48,18 @@ namespace nabla {
         std::vector<double> raw_data() const { return data_; }
         void setdata(std::vector<double> v) { data_ = v; }
 
+        // Apply the given transformation to the tensor elementwise.
+        Tensor apply_transform(std::function<double(double)> transformation) const;
+
         friend std::ostream& operator<<(std::ostream& os, const Tensor& tensor);
 
     private:
-        std::string generate_default_name_();
-        std::vector<size_t> compute_stride_from_shape_(const std::vector<size_t>& shape) const;
-        size_t flatten_index_(const std::vector<size_t>& indices) const;
+        std::string _generate_default_name_();
+        std::vector<size_t> _compute_stride_from_shape_(const std::vector<size_t>& shape) const;
+
+        // Given a set of indices referring to a position shaped tensor data, compute the
+        // corresponding index in the plain internal 'data_' vector.
+        size_t _flatten_index_(const std::vector<size_t>& indices) const;
 
         // Convert internal tensor data into a string representation according to its shape.
         // 'index0' represents the begin index of the current chunk of data being processed.
