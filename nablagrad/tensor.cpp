@@ -1,6 +1,5 @@
 #include "tensor.hpp"
-/* #include "tensor_ops.hpp" */
-/* #include "core.hpp" */
+#include "autograd.hpp"
 
 #include <iostream>
 #include <iomanip>
@@ -10,16 +9,18 @@
 namespace nabla {
 
     // tensor base constructor
-    Tensor::Tensor(const std::string& name, const std::vector<size_t>& shape, bool requires_grad)
+    Tensor::Tensor(const std::string& name, const std::vector<size_t>& shape, bool requires_grad, bool ir)
         : name_{name}, shape_{shape}, requires_grad_{requires_grad}
     {
         stride_ = _compute_stride_from_shape_(shape_);
         size_ = std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<size_t>());
         data_ = std::vector<double>(size_);
+
+        if (requires_grad && !ir) autograd::ComputationGraph::push_leaf(*this);
     }
 
-    Tensor::Tensor(const std::vector<size_t>& shape, bool requires_grad)
-        : Tensor(_generate_default_name_(), shape, requires_grad) {}
+    Tensor::Tensor(const std::vector<size_t>& shape, bool requires_grad, bool ir)
+        : Tensor(_generate_default_name_(), shape, requires_grad, ir) {}
 
     Tensor Tensor::rand(const std::vector<size_t>& shape, bool requires_grad) {
         Tensor rand_tensor(shape, requires_grad);
@@ -43,6 +44,46 @@ namespace nabla {
         return ones_tensor;
     }
 
+    void Tensor::backward() const {
+        Tensor upstream_grad = Tensor::ones({size_}); // init acc local grad to 1
+        // init gradient propagation through computation nodes from this tensor
+        /* const ComputationNode& cnode = ComputationGraph::get_operator(cg_node_idx_); */
+        /* cnode.backward(upstream_grad); */
+    }
+
+    /* void Tensor::backward(const Tensor& upstream_grad) const { */
+    /*     const TensorOperator& t_op = ComputationGraph::get_operator(cg_node_idx_); */
+    /*     Tensor local_grad = t_op.backward(); // operator backward pass */
+    /*     size_t local_grad_iter = 0; */
+    /*     for (const auto& input_idx : t_op::inputs()) { */
+    /*         Tensor downstream_grad = tensor_aops::mul(upstream_grad, local_grad.at(local_grad_iter)); */
+
+    /*         local_grad_iter++; */
+    /*     } */
+    /* } */
+
+    /* void Tensor::backward() const { */
+    /*     // grad_ here is our local grad */
+    /*     grad_ = Tensor::ones({size_}); // set gradient of the output to 1 */
+
+    /*     // replay backwards the performed tensor operations from 'self' */
+    /*     for (const auto& operation : ComputationGraph::nodes()) { */
+    /*         Tensor grad = */
+    /*     } */
+
+    /*     /1* grad_fn_.backward(grad_); *1/ */
+    /*     /1* for (const auto& input : grad_fn_.inputs()) { *1/ */
+    /*     /1*     local_grad = *1/ */
+    /*     /1*     grad = *1/ */
+    /*     /1* } *1/ */
+    /* } */
+
+    /* void Tensor::backward(const Tensor& accumulated_grad) const { */
+    /*     for (const auto& input : grad_fn_.inputs()) { */
+    /*         Tensor grad = tensor_aops::mul(accumulated_grad, ) */
+    /*     } */
+    /* } */
+
     std::string Tensor::_generate_default_name_() {
         return "tensor_" + std::to_string(tensor_next_id_++);
     }
@@ -53,6 +94,25 @@ namespace nabla {
 
     const double& Tensor::at(const std::vector<size_t>& indices) const {
         return data_[_flatten_index_(indices)];
+    }
+
+    Tensor Tensor::at(size_t index, size_t dim) const {
+        size_t begin_idx = stride_[dim] * index;
+        std::vector<double> td;
+        size_t offset;
+        if (dim == shape_.size() - 1) offset = 0;
+        else offset = stride_[dim + 1];
+        for (size_t i = begin_idx; i < begin_idx + stride_[dim]; i += offset) {
+            td.push_back(data_[i]);
+        }
+
+        // compute shape of the retrieved subtensor
+        std::vector<size_t> eshape;
+        for (size_t i = dim + 1; i < shape_.size(); i++) eshape.push_back(shape_[i]);
+
+        Tensor attensor(eshape, requires_grad_, false);
+        attensor.data_ = td;
+        return attensor;
     }
 
     Tensor Tensor::apply_transform(std::function<double(double)> transformation) const {
